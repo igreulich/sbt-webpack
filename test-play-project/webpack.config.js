@@ -1,66 +1,40 @@
-"use strict";
+const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
 
-module.exports = {
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env']
-          }
-        }
-      },
-      {
-        test: /vue\.runtime\.js/,
-        use: {
-          loader: 'expose-loader',
-          options: 'Vue'
-        }
-      },
-      {
-        test: /axios\.js/,
-        use: {
-          loader: 'expose-loader',
-          options: 'axios'
-        }
-      },
-      {
-        test: /vue-i18n\.js/,
-        use: {
-          loader: 'expose-loader',
-          options: 'VueI18n'
-        }
-      }
-    ],
+const baseConfig = {
+  resolve: {
+    extensions: ['.js', '.jsx'],
   },
   optimization: {
     splitChunks: {
       cacheGroups: {
         vendor: {
-          test: /app\/assets\/javascripts\/vendor/,
+          test: /[\\/]node_modules[\\/]/,
           chunks: 'initial',
-          name: 'javascripts/vendor.js',
-          enforce: true,
-        },
-        node_modules: {
-          test: /node_modules/,
-          chunks: 'initial',
-          name: 'javascripts/node_modules.js',
+          name: 'vendor',
           enforce: true,
         }
       }
     },
   },
-  devtool: ''
+  plugins: [
+    new MomentLocalesPlugin({
+      localesToKeep: ['es-us'],
+    }),
+  ],
 };
 
-if (process.env.NODE_ENV === 'production') {
-  console.log('[sbt-webpack] Enable the production mode');
-  module.exports.mode = 'production';
-} else {
-  console.log('[sbt-webpack] Enable the development mode');
-  module.exports.mode = 'development';
+function configFactory(base) {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('[sbt-webpack] Enable the production mode');
+
+    base.mode = 'production';
+  } else {
+    console.log('[sbt-webpack] Enable the development mode');
+
+    base.mode = 'development';
+  }
+
+  return base;
 }
+
+module.exports = configFactory(baseConfig);
