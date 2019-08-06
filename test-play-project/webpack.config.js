@@ -1,66 +1,109 @@
-"use strict";
+const webpack = require('webpack');
+const flowright = require('lodash.flowright');
+const TerserPlugin = require('terser-webpack-plugin');
+const MomentLocalesPlugin = require('moment-locales-webpack-plugin');
 
-module.exports = {
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-env']
-          }
-        }
-      },
-      {
-        test: /vue\.runtime\.js/,
-        use: {
-          loader: 'expose-loader',
-          options: 'Vue'
-        }
-      },
-      {
-        test: /axios\.js/,
-        use: {
-          loader: 'expose-loader',
-          options: 'axios'
-        }
-      },
-      {
-        test: /vue-i18n\.js/,
-        use: {
-          loader: 'expose-loader',
-          options: 'VueI18n'
-        }
-      }
-    ],
-  },
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        vendor: {
-          test: /app\/assets\/javascripts\/vendor/,
-          chunks: 'initial',
-          name: 'javascripts/vendor.js',
-          enforce: true,
-        },
-        node_modules: {
-          test: /node_modules/,
-          chunks: 'initial',
-          name: 'javascripts/node_modules.js',
-          enforce: true,
-        }
-      }
+const nodeEnv = process.env.NODE_ENV || '';
+
+function generateBaseConfig() {
+  const config = {
+    mode: '',
+    devtool: '',
+    resolve: {
+      extensions: ['.js', '.jsx'],
     },
-  },
-  devtool: 'source-map'
-};
+    module: {},
+    // We never need all of the moment locales.
+    plugins: [
+      new MomentLocalesPlugin({
+        localesToKeep: ['es-us'],
+      }),
+      new webpack.ProvidePlugin({
+        $: 'jquery',
+        jquery: 'jquery',
+        jQuery: 'jquery',
+      }),
+    ],
+  }
 
-if (process.env.NODE_ENV === 'production') {
-  console.log('[sbt-webpack] Enable the production mode');
-  module.exports.mode = 'production';
-} else {
-  console.log('[sbt-webpack] Enable the development mode');
-  module.exports.mode = 'development';
+  return config
 }
+
+function applyEnv(config) {
+  let newConfig;
+
+  if (nodeEnv === 'production') {
+    newConfig = {
+      ...config,
+      mode: 'production',
+      devtool: 'source-map',
+      optimization: {
+        splitChunks: {
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              chunks: 'initial',
+              name: 'javascripts/vendor.js',
+              enforce: true,
+            },
+          },
+        },
+        minimizer: [
+          new TerserPlugin({
+            sourceMap: true,
+            parallel: true,
+          }),
+        ],
+      },
+    };
+  } else {
+    newConfig = {
+      ...config,
+      mode: 'development',
+      devtool: 'cheap-module-eval-source-map',
+    };
+  }
+
+  return newConfig;
+}
+
+function applyLoaders(config) {
+  let newConfig;
+
+  newConfig = {
+    ...config,
+    module: {
+      rules: [{
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env'],
+          plugins: [],
+        }
+      }, {
+        test: require.resolve('jquery'),
+        use: [{
+          loader: 'expose-loader',
+          options: '$',
+        },{
+          loader: 'expose-loader',
+          options: 'jquery',
+        },{
+          loader: 'expose-loader',
+          options: 'jQuery',
+        }],
+      }],
+    },
+  };
+
+  return newConfig;
+}
+
+const configurate = flowright(
+  applyLoaders,
+  applyEnv,
+  generateBaseConfig,
+);
+
+module.exports = configurate();

@@ -1,8 +1,9 @@
-require('./vendor/lib.js');
-require('./c.js');
+import 'jquery-knob';
 
+import currentTime from './b';
 
-console.log('This is a.js');
+console.log('The current time is', currentTime);
 
-let test = "variable";
-let arrowFunction = (firstArgument) => { return firstArgument; };
+$('.dial').knob();
+
+export default $('.time').html(currentTime);

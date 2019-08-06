@@ -1,8 +1,10 @@
 @()
-
-<script src='@routes.Assets.versioned("javascripts/node_modules.js")'></script>
-<script src='@routes.Assets.versioned("javascripts/vendor.js")'></script>
-<script src='@routes.Assets.versioned("javascripts/compiled-a.js")'></script>
-<script src='@routes.Assets.versioned("javascripts/compiled-b.js")'></script>
-
-<h1>Hello</h1>
+<head>
+  <script type="text/javascript" src='@routes.Assets.versioned("javascripts/vendor.js")'></script>
+</head>
+<body>
+  <h1>Hello</h1>
+  <p>The current time is <span class="time"></span>.</p>
+  <input type="text" value="75" class="dial" />
+  <script type="text/javascript" src='@routes.Assets.versioned("javascripts/compiled.js")'></script>
+</body>
